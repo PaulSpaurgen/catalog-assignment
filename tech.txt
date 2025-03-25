@@ -1,0 +1,5 @@
+https://docs.coincap.io/
+https://www.tradingview.com/lightweight-charts/
+Next.Js
+tailwindcss 
+
