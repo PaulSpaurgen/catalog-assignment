@@ -26,7 +26,7 @@ export default function Home() {
     <div className="p-10">
       <div className="mb-[40px]">
         <div className="flex gap-2">
-          <h3 className="text-6xl font-medium text-[#1A243A]">{parseFloat(assetData?.priceUsd).toFixed(2)}</h3>
+          <h3 className="text-6xl font-medium text-[#1A243A]">{assetData?.priceUsd ? parseFloat(assetData?.priceUsd).toFixed(2) : "0.00"}</h3>
           <h6 className="text-2xl font-medium text-[#BDBEBF]">USD</h6>
         </div>
         <div className="mt-3">

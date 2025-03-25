@@ -5,7 +5,9 @@ import { Asset, coinCapService } from "@/services/coinCap";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
-const LineGraph = dynamic(() => import("@/components/LineGraph"), { ssr: false });
+const LineGraph = dynamic(() => import("@/components/LineGraph"), {
+  ssr: false,
+});
 
 const timePeriods = [
   { title: "1m", value: "m1" },
@@ -20,9 +22,11 @@ const timePeriods = [
 ];
 
 export default function ChartControls({
-    isFullscreen = false,
+  isFullscreen = false,
+  assetId = "BTC",
 }: {
-    isFullscreen?: boolean;
+  isFullscreen?: boolean;
+  assetId?: string;
 }) {
   const [activeTimePeriod, setActiveTimePeriod] = useState(timePeriods[1]);
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
@@ -36,11 +40,21 @@ export default function ChartControls({
   useEffect(() => {
     const fetchBtcMarketData = async () => {
       setIsLoading(true);
-      const data = await coinCapService.getAssetHistory("bitcoin", activeTimePeriod.value);
-      const transformedData = data.map(item => ({
-        time: Math.floor(new Date(new Date(item.date).toISOString().slice(0, 19)).getTime() / 1000) as any,
-        value: parseFloat(item.priceUsd)
-      })).sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+      const data = await coinCapService.getAssetHistory(
+        "bitcoin",
+        activeTimePeriod.value
+      );
+      const transformedData = data
+        .map((item) => ({
+          time: Math.floor(
+            new Date(new Date(item.date).toISOString().slice(0, 19)).getTime() /
+              1000
+          ) as any,
+          value: parseFloat(item.priceUsd),
+        }))
+        .sort(
+          (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+        );
       setBtcMarketData(transformedData);
       setIsLoading(false);
     };
@@ -49,12 +63,19 @@ export default function ChartControls({
 
   return (
     <div className=" h-full ">
-      <div className={`flex justify-between mb-[40px] ${!isFullscreen ? "w-[60vw]" : "w-[90vw]"}`}>
+      <div
+        className={`flex justify-between mb-[40px] ${
+          !isFullscreen ? "w-[60vw]" : "w-[90vw]"
+        }`}
+      >
         <div className="flex gap-[30px] items-center">
           <div className="flex gap-[10px] items-center">
             <Image src="/assets/arrow.svg" alt="chart" width={24} height={24} />
-            <a href={isFullscreen ? "/" : "/fullscreen"} className="text-md font-medium text-[#1A243A]">
-            {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            <a
+              href={isFullscreen ? "/" : "/fullscreen"}
+              className="text-md font-medium text-[#1A243A]"
+            >
+              {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             </a>
           </div>
 
@@ -85,9 +106,16 @@ export default function ChartControls({
           ))}
         </div>
       </div>
-      <div className="w-full h-full min-w-[600px] transition-all duration-300">
-        <LineGraph data={btcMarketData} isLoading={isLoading} isFullscreen={isFullscreen} />
+      <div className="w-full h-full min-w-[600px] ">
+        <div className="border-[1px] border-primary rounded-lg px-[10px] py-[5px] w-fit mb-4">
+          <p className="text-sm text-primary font-medium">{assetId}</p>
+        </div>
+        <LineGraph
+          data={btcMarketData}
+          isLoading={isLoading}
+          isFullscreen={isFullscreen}
+        />
       </div>
     </div>
   );
-} 
+}
