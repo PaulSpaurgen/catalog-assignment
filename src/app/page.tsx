@@ -1,5 +1,7 @@
 "use client";
 import ChartControls from "@/components/ChartControls";
+import { coinCapService } from "@/services/coinCap";
+import { useEffect, useState } from "react";
 
 const tabTitles = [
   { title: "Summary", isActive: false },
@@ -11,16 +13,25 @@ const tabTitles = [
 
 
 export default function Home() {
+  const [assetData, setAssetData] = useState<any>(null);
+
+  useEffect(() => {
+    coinCapService.getAssetData("bitcoin").then((data) => {
+      console.log({data});
+      setAssetData(data);
+    });
+  }, []);
+
   return (
     <div className="p-10">
       <div className="mb-[40px]">
         <div className="flex gap-2">
-          <h3 className="text-6xl font-medium text-[#1A243A]">63,765.46</h3>
+          <h3 className="text-6xl font-medium text-[#1A243A]">{parseFloat(assetData?.priceUsd).toFixed(2)}</h3>
           <h6 className="text-2xl font-medium text-[#BDBEBF]">USD</h6>
         </div>
         <div className="mt-3">
-          <p className="text-[#67BF6B] text-md font-medium">
-            + 2,161.42 (3.54%)
+          <p className={`text-md font-medium ${assetData?.changePercent24Hr > 0 ? "text-[#67BF6B]" : "text-[#FF4D4D]"}`}>
+            {parseFloat(assetData?.changePercent24Hr).toFixed(2)}%
           </p>
         </div>
       </div>

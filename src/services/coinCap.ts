@@ -78,6 +78,12 @@ export const coinCapService = {
     }
   },
 
+  async getAssetData(id: string): Promise<any> {
+    const response = await fetch(`${COINCAP_API_URL}/assets/${id}`);
+    const data = await response.json();
+    return data.data;
+  },
+
   returnDayForInterval: function (interval: string) {
     const now = Date.now();
     const oneDayMs = 24 * 60 * 60 * 1000; // one day in milliseconds
