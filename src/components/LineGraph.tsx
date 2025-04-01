@@ -22,23 +22,15 @@ const chartOptionsSmall = {
   },
 };
 
-const chartOptionsLarge = {};
 
 const returnChartOpionsWithDimensions = (
   vw: number,
   vh: number,
-  isFullscreen: boolean
 ) => {
-  console.log("vw", vw);
-  console.log("vh", vh);
-  console.log("isFullscreen", isFullscreen);
-  const chartOptions = isFullscreen
-    ? chartOptionsLarge
-    : chartOptionsSmall;
   return {
-    ...chartOptions,
-    width: isFullscreen ? vw * 0.9 : vw * 0.6,
-    height: isFullscreen ? vh * 0.6 : 343,
+    ...chartOptionsSmall,
+    width: vw * 0.95,
+    height:343,
   };
 };
 
@@ -87,8 +79,7 @@ export default function LineGraph({
         document?.documentElement?.clientHeight || 0,
         window?.innerHeight || 0
       );
-      const chartOptions = returnChartOpionsWithDimensions(vw, vh, isFullscreen);
-      console.log("chartOptions", chartOptions);
+      const chartOptions = returnChartOpionsWithDimensions(vw, vh);
       const chart = createChart(chartContainerRef.current, chartOptions);
       chartInstanceRef.current = chart;
       return () => {

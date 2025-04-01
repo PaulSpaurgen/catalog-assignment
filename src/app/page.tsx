@@ -25,9 +25,9 @@ export default function Home() {
   return (
     <div className="p-10">
       <div className="mb-[40px]">
-        <div className="flex gap-2">
-          <h3 className="text-6xl font-medium text-[#1A243A]">{assetData?.priceUsd ? parseFloat(assetData?.priceUsd).toFixed(2) : "0.00"}</h3>
-          <h6 className="text-2xl font-medium text-[#BDBEBF]">USD</h6>
+        <div className="flex items-start gap-2">
+          <p className="text-[70px] font-medium text-[#1A243A] leading-none">{assetData?.priceUsd ? parseFloat(assetData?.priceUsd).toFixed(2) : ""}</p>
+          <span className="text-2xl font-medium text-[#BDBEBF] leading-none mt-2">USD</span>
         </div>
         <div className="mt-3">
           <p className={`text-md font-medium ${assetData?.changePercent24Hr > 0 ? "text-[#67BF6B]" : "text-[#FF4D4D]"}`}>
@@ -40,8 +40,8 @@ export default function Home() {
         {tabTitles.map((tab, index) => (
           <div
             key={index}
-            className={`font-normal text-md text-[#6F7177] px-[10px] pb-[20px] ${
-              tab.isActive ? "border-b-[3px] border-primary text-[#1A243A]" : ""
+            className={`font-medium text-md  px-[10px] pb-[20px] ${
+              tab.isActive ? "border-b-[3px] border-primary text-[#1A243A]" : "text-[#6F7177]"
             }`}
           >
             {tab.title}

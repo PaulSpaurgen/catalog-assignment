@@ -4,6 +4,7 @@ import MultiSelectWrapper from "@/components/MultiSelectWrapper";
 import { Asset, coinCapService } from "@/services/coinCap";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRef } from "react";
 
 const LineGraph = dynamic(() => import("@/components/LineGraph"), {
   ssr: false,
@@ -21,17 +22,13 @@ const timePeriods = [
   { title: "1d", value: "d1" },
 ];
 
-export default function ChartControls({
-  isFullscreen = false,
-  assetId = "BTC",
-}: {
-  isFullscreen?: boolean;
-  assetId?: string;
-}) {
+export default function ChartControls() {
   const [activeTimePeriod, setActiveTimePeriod] = useState(timePeriods[1]);
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
   const [btcMarketData, setBtcMarketData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const multiSelectRef = useRef<HTMLInputElement>(null);
 
   const handleAssetSelection = (assets: Asset[]) => {
     setSelectedAssets(assets);
@@ -62,43 +59,47 @@ export default function ChartControls({
   }, [selectedAssets, activeTimePeriod]);
 
   return (
-    <div className=" h-full ">
-      <div
-        className={`flex justify-between mb-[40px] ${
-          !isFullscreen ? "w-[60vw]" : "w-[90vw]"
-        }`}
-      >
+    <div className=" h-full w-full max-w-[91.2vw]">
+      <div className="flex justify-between mb-[40px] w-full">
         <div className="flex gap-[30px] items-center">
           <div className="flex gap-[10px] items-center">
             <Image src="/assets/arrow.svg" alt="chart" width={24} height={24} />
-            <a
-              href={isFullscreen ? "/" : "/fullscreen"}
-              className="text-md font-medium text-[#1A243A]"
-            >
-              {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-            </a>
+
+            <a className="text-md font-medium text-[#1A243A]">Fullscreen</a>
           </div>
 
           <div className="flex gap-[10px] items-center">
-            <Image src="/assets/add.svg" alt="chart" width={24} height={24} />
+            <button
+              className="cursor-pointer"
+              onClick={() => {
+                const eleTofocus = document.getElementById(
+                  "multi_select_custom_input"
+                );
+                if (eleTofocus) {
+                  eleTofocus.focus();
+                }
+              }}
+            >
+              <Image src="/assets/add.svg" alt="chart" width={24} height={24} />
+            </button>
             <div className="relative">
-              <MultiSelectWrapper onSelect={handleAssetSelection} />
-              <p className="text-sm text-[#6F7177] font-medium absolute left-0">
-                Max 3
-              </p>
+              <MultiSelectWrapper
+                onSelect={handleAssetSelection}
+                multiSelectRef={multiSelectRef}
+              />
             </div>
           </div>
         </div>
 
-        <div className="flex gap-[10px] items-center">
+        <div className="flex gap-[20px] items-center">
           {timePeriods.map((timePeriod, index) => (
             <button
               key={index}
               className={`text-md text-[#6F7177] font-medium ${
                 activeTimePeriod.value === timePeriod.value
-                  ? "text-white bg-primary rounded-lg px-[10px] py-[5px]"
+                  ? "text-white bg-primary rounded-[5px] px-[14px] py-[5px]"
                   : ""
-              }`}
+              } `}
               onClick={() => setActiveTimePeriod(timePeriod)}
             >
               {timePeriod.title}
@@ -106,16 +107,11 @@ export default function ChartControls({
           ))}
         </div>
       </div>
-      <div className="w-full h-full min-w-[600px] ">
-        <div className="border-[1px] border-primary rounded-lg px-[10px] py-[5px] w-fit mb-4">
-          <p className="text-sm text-primary font-medium">{assetId}</p>
-        </div>
-        <LineGraph
-          data={btcMarketData}
-          isLoading={isLoading}
-          isFullscreen={isFullscreen}
-        />
-      </div>
+      <LineGraph
+        data={btcMarketData}
+        isLoading={isLoading}
+        isFullscreen={true}
+      />
     </div>
   );
 }
