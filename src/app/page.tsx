@@ -11,6 +11,18 @@ const tabTitles = [
   { title: "Settings", isActive: false },
 ];
 
+const formatPrice = (price: string | number | null | undefined): string => {
+  if (!price) return "";
+  
+  // Convert to number and fix to 2 decimal places
+  const numPrice = parseFloat(price.toString());
+  
+  // Format with commas and 2 decimal places
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(numPrice);
+};
 
 export default function Home() {
   const [assetData, setAssetData] = useState<any>(null);
@@ -26,7 +38,7 @@ export default function Home() {
     <div className="p-10">
       <div className="mb-[40px]">
         <div className="flex items-start gap-2">
-          <p className="text-[70px] font-medium text-[#1A243A] leading-none">{assetData?.priceUsd ? parseFloat(assetData?.priceUsd).toFixed(2) : ""}</p>
+          <p className="text-[70px] font-medium text-[#1A243A] leading-none">{formatPrice(assetData?.priceUsd)}</p>
           <span className="text-2xl font-medium text-[#BDBEBF] leading-none mt-2">USD</span>
         </div>
         <div className="mt-3">
