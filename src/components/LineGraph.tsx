@@ -7,6 +7,16 @@ const chartOptionsSmall = {
     ticksVisible: false,
     textColor: "transparent",
     borderColor: "#E2E4E7",
+    borderVisible: false, // This removes the right border
+    alignLabels: false, // This helps with label positioning
+  },
+    crosshair: {
+      vertLine: {
+        labelVisible:false
+          
+      },
+      horzLine: {
+      },
   },
   timeScale: {
     visible: true,
@@ -22,23 +32,11 @@ const chartOptionsSmall = {
   },
 };
 
-const chartOptionsLarge = {};
-
-const returnChartOpionsWithDimensions = (
-  vw: number,
-  vh: number,
-  isFullscreen: boolean
-) => {
-  console.log("vw", vw);
-  console.log("vh", vh);
-  console.log("isFullscreen", isFullscreen);
-  const chartOptions = isFullscreen
-    ? chartOptionsLarge
-    : chartOptionsSmall;
+const returnChartOpionsWithDimensions = (vw: number, vh: number) => {
   return {
-    ...chartOptions,
-    width: isFullscreen ? vw * 0.9 : vw * 0.6,
-    height: isFullscreen ? vh * 0.6 : 343,
+    ...chartOptionsSmall,
+    width: vw * 0.95,
+    height: 343,
   };
 };
 
@@ -71,24 +69,30 @@ export default function LineGraph({
         lineColor: "#4B40EE",
         topColor: "rgba(75, 64, 238, 0.1)",
         bottomColor: "rgba(75, 64, 238, 0.02)",
+        lineWidth: 2,
+        priceLineColor: "#4B40EE",
       });
       seriesRef.current = areaSeries;
       areaSeries.setData(data);
+      
+      const labels = chartInstanceRef.current
+      console.log({labels})
+
     }
   }, [data]);
 
   useEffect(() => {
     if (chartContainerRef.current && !chartInstanceRef.current) {
-        const vw = Math.max(
-            document?.documentElement?.clientWidth || 0,
-            window?.innerWidth || 0
+      const vw = Math.max(
+        document?.documentElement?.clientWidth || 0,
+        window?.innerWidth || 0
       );
       const vh = Math.max(
         document?.documentElement?.clientHeight || 0,
         window?.innerHeight || 0
       );
-      const chartOptions = returnChartOpionsWithDimensions(vw, vh, isFullscreen);
-      console.log("chartOptions", chartOptions);
+      const chartOptions = returnChartOpionsWithDimensions(vw, vh);
+      console.log({ chartOptions });
       const chart = createChart(chartContainerRef.current, chartOptions);
       chartInstanceRef.current = chart;
       return () => {

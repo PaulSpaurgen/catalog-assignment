@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next/font": "^14.2.15",
     "lightweight-charts": "^5.0.4",
     "multiselect-react-dropdown": "^2.0.25",
     "next": "14.2.26",
