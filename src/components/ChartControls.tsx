@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRef } from "react";
 
+const D3LineGraph = dynamic(() => import("@/components/D3LineGraph"), {
+  ssr: false,
+});
+
 const LineGraph = dynamic(() => import("@/components/LineGraph"), {
   ssr: false,
 });
@@ -27,6 +31,7 @@ export default function ChartControls() {
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
   const [btcMarketData, setBtcMarketData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showD3LineGraph, setShowD3LineGraph] = useState(false);
 
   const multiSelectRef = useRef<HTMLInputElement>(null);
 
@@ -65,7 +70,7 @@ export default function ChartControls() {
           <div className="flex gap-[10px] items-center">
             <Image src="/assets/arrow.svg" alt="chart" width={24} height={24} />
 
-            <a className="text-md font-medium text-[#1A243A]">Fullscreen</a>
+            <button className="text-md font-medium text-[#1A243A]" onClick={() => setShowD3LineGraph(!showD3LineGraph)}>Fullscreen</button>
           </div>
 
           <div className="flex gap-[10px] items-center">
@@ -107,11 +112,22 @@ export default function ChartControls() {
           ))}
         </div>
       </div>
-      <LineGraph
-        data={btcMarketData}
-        isLoading={isLoading}
-        isFullscreen={true}
-      />
+      {!isLoading && (!btcMarketData || btcMarketData.length === 0) && (
+        <div className="text-center mb-4 text-red-500">
+          No data available. Please refresh the page after a few seconds to see the data.
+        </div>
+      )}
+      {showD3LineGraph ? (
+        <D3LineGraph
+          data={btcMarketData}
+          isLoading={isLoading}
+        />
+      ) : (
+        <LineGraph
+          data={btcMarketData}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   );
 }
