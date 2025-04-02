@@ -32,7 +32,6 @@ const chartOptionsSmall = {
   },
 };
 
-// Using proper types from lightweight-charts
 type ChartDataType = (AreaData<Time> | HistogramData<Time>)[];
 
 const returnChartOptionsWithDimensions = (vw: number, vh: number) => {
@@ -56,17 +55,35 @@ export default function LineGraph({
   const chartInstanceRef = useRef<ReturnType<typeof createChart>>();
   const seriesRef = useRef<any>(null);
   const histogramSeriesRef = useRef<any>(null);
-  const resizeListenerRef = useRef<() => void>(); // Store resize listener for cleanup
+  const resizeListenerRef = useRef<() => void>();
 
-  // Memoize data updates - now only handles data updates
   const updateChartData = useCallback(() => {
     if (data && data.length > 0 && seriesRef.current && histogramSeriesRef.current) {
+      console.log("data", data);
       seriesRef.current.setData(data);
-      histogramSeriesRef.current.setData(data);
+      
+      const histogramData = data.map((item, index) => {
+        let difference = 0;
+        if (index > 0) {
+          difference = Math.abs(item.value - data[index - 1].value);
+        } else if (data.length > 1) {
+          difference = Math.abs(item.value - data[index + 1].value);
+        }
+        
+        const baseValue = 0.5;
+        const scaledDifference = difference * 0.006;
+        
+        return {
+          time: item.time,
+          value: baseValue + scaledDifference,
+         
+        };
+      });
+      
+      histogramSeriesRef.current.setData(histogramData);
     }
   }, [data]);
 
-  // Initial setup effect - handles chart and series creation
   useEffect(() => {
     if (chartContainerRef.current && !chartInstanceRef.current) {
       const vw = Math.max(
@@ -81,17 +98,13 @@ export default function LineGraph({
       const chart = createChart(chartContainerRef.current, chartOptions);
       chartInstanceRef.current = chart;
 
-      // Create area series with its own price scale
       const areaSeries = chart.addSeries(AreaSeries, {
         lineColor: "rgb(71, 82, 238)",
         topColor: "rgba(71, 82, 238, 0.15)",
         bottomColor: "rgba(71, 82, 238, 0.02)",
         lineWidth: 2,
         priceLineVisible: true,
-        priceLineColor: "#4752EE",
         crosshairMarkerVisible: false,
-        lastValueVisible: true,
-        lastPriceAnimation: 1,
         priceFormat: {
           type: 'price',
           precision: 2,
@@ -100,25 +113,32 @@ export default function LineGraph({
       });
 
       const histogramSeries = chart.addSeries(HistogramSeries, {
-        color: "rgba(226, 228, 231, 1)",
+        color: "#E2E4E7",
         lastValueVisible: false,
         priceLineVisible: false,
         visible: true,
-        priceScaleId: 'volume',
+        priceScaleId: '',
+        priceFormat: {
+          type: 'volume',
+        },
+        baseLineVisible: false, 
       });
 
       areaSeries.priceScale().applyOptions({
-        scaleMargins: { top: 0.1, bottom: 0.2 },
+        scaleMargins: { top: 0, bottom: 0.4 },
         visible: true,
         autoScale: true,
       });
 
-      // Configure the volume scale
-      chart.priceScale('volume').applyOptions({
-        scaleMargins: { top: 0.8, bottom: 0 },
-        visible: false, 
+      histogramSeries.priceScale().applyOptions({
+        scaleMargins: { top: 0.6, bottom: 0.008 },
+        visible: false,
         alignLabels: true,
         autoScale: true,
+      });
+
+      chartInstanceRef.current.timeScale().applyOptions({
+        barSpacing: 4,
       });
 
       seriesRef.current = areaSeries;
@@ -128,31 +148,7 @@ export default function LineGraph({
         areaSeries.setData(data);
         histogramSeries.setData(data);
       }
-
-      chartInstanceRef.current.applyOptions({
-        handleScale: {
-          axisPressedMouseMove: true,
-        },
-        handleScroll: {
-          vertTouchDrag: false,
-        },
-        rightPriceScale: {
-          visible: true,
-          autoScale: true,
-          scaleMargins: {
-            top: 0.1,
-            bottom: 0.2,
-          },
-        },
-      });
-
-      // Apply label styling separately
-      areaSeries.applyOptions({
-        priceLineSource: PriceLineSource.LastVisible,
-        lastPriceAnimation: 1,
-      });
       
-      // Setup resize listener
       const handleResize = () => {
         if (chartInstanceRef.current && chartContainerRef.current) {
           const vw = Math.max(
@@ -167,26 +163,21 @@ export default function LineGraph({
       };
       
       window.addEventListener('resize', handleResize);
-      // Store the listener for cleanup
       resizeListenerRef.current = handleResize;
     }
 
-    // Cleanup function
     return () => {
-      // Remove resize event listener
       if (resizeListenerRef.current) {
         window.removeEventListener('resize', resizeListenerRef.current);
       }
       
-      // Clean up chart instance
       if (chartInstanceRef.current) {
         chartInstanceRef.current.remove();
         chartInstanceRef.current = undefined;
       }
     };
-  }, []); // Empty dependency array since this should only run once
+  }, []);
 
-  // Effect for data updates
   useEffect(() => {
     updateChartData();
   }, [updateChartData]);
