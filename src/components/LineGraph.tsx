@@ -1,22 +1,22 @@
 "use client";
-import { AreaSeries, createChart } from "lightweight-charts";
-import { useEffect, useRef, useMemo, useCallback, useState } from "react";
+import { AreaSeries, createChart, HistogramSeries, PriceLineSource, Time, AreaData, HistogramData } from "lightweight-charts";
+import { useEffect, useRef, useCallback } from "react";
 
 const chartOptionsSmall = {
   rightPriceScale: {
     ticksVisible: false,
     textColor: "transparent",
     borderColor: "#E2E4E7",
-    borderVisible: false, // This removes the right border
-    alignLabels: false, // This helps with label positioning
+    visible: true,
   },
-    crosshair: {
-      vertLine: {
-        labelVisible:false
-          
-      },
-      horzLine: {
-      },
+  crosshair: {
+    vertLine: {
+      labelVisible: false,
+      color: '#999999',
+    },
+    horzLine: {
+      color: '#999999',
+    },
   },
   timeScale: {
     visible: true,
@@ -32,7 +32,10 @@ const chartOptionsSmall = {
   },
 };
 
-const returnChartOpionsWithDimensions = (vw: number, vh: number) => {
+// Using proper types from lightweight-charts
+type ChartDataType = (AreaData<Time> | HistogramData<Time>)[];
+
+const returnChartOptionsWithDimensions = (vw: number, vh: number) => {
   return {
     ...chartOptionsSmall,
     width: vw * 0.95,
@@ -42,11 +45,9 @@ const returnChartOpionsWithDimensions = (vw: number, vh: number) => {
 
 export default function LineGraph({
   data,
-  isMultiple = false,
   isLoading,
-  isFullscreen = false,
 }: {
-  data: any[];
+  data: ChartDataType;
   isMultiple?: boolean;
   isLoading?: boolean;
   isFullscreen?: boolean;
@@ -54,33 +55,18 @@ export default function LineGraph({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<ReturnType<typeof createChart>>();
   const seriesRef = useRef<any>(null);
+  const histogramSeriesRef = useRef<any>(null);
+  const resizeListenerRef = useRef<() => void>(); // Store resize listener for cleanup
 
-  // Memoize chart options
-
-  // Memoize data updates
+  // Memoize data updates - now only handles data updates
   const updateChartData = useCallback(() => {
-    if (data && chartInstanceRef.current) {
-      if (seriesRef.current) {
-        chartInstanceRef.current.removeSeries(seriesRef.current);
-        seriesRef.current = null;
-      }
-
-      const areaSeries = chartInstanceRef.current.addSeries(AreaSeries, {
-        lineColor: "#4B40EE",
-        topColor: "rgba(75, 64, 238, 0.1)",
-        bottomColor: "rgba(75, 64, 238, 0.02)",
-        lineWidth: 2,
-        priceLineColor: "#4B40EE",
-      });
-      seriesRef.current = areaSeries;
-      areaSeries.setData(data);
-      
-      const labels = chartInstanceRef.current
-      console.log({labels})
-
+    if (data && data.length > 0 && seriesRef.current && histogramSeriesRef.current) {
+      seriesRef.current.setData(data);
+      histogramSeriesRef.current.setData(data);
     }
   }, [data]);
 
+  // Initial setup effect - handles chart and series creation
   useEffect(() => {
     if (chartContainerRef.current && !chartInstanceRef.current) {
       const vw = Math.max(
@@ -91,28 +77,123 @@ export default function LineGraph({
         document?.documentElement?.clientHeight || 0,
         window?.innerHeight || 0
       );
-      const chartOptions = returnChartOpionsWithDimensions(vw, vh);
-      console.log({ chartOptions });
+      const chartOptions = returnChartOptionsWithDimensions(vw, vh);
       const chart = createChart(chartContainerRef.current, chartOptions);
       chartInstanceRef.current = chart;
-      return () => {
-        chart.remove();
-        chartInstanceRef.current = undefined;
-      };
-    }
-  }, []);
 
+      // Create area series with its own price scale
+      const areaSeries = chart.addSeries(AreaSeries, {
+        lineColor: "rgb(71, 82, 238)",
+        topColor: "rgba(71, 82, 238, 0.15)",
+        bottomColor: "rgba(71, 82, 238, 0.02)",
+        lineWidth: 2,
+        priceLineVisible: true,
+        priceLineColor: "#4752EE",
+        crosshairMarkerVisible: false,
+        lastValueVisible: true,
+        lastPriceAnimation: 1,
+        priceFormat: {
+          type: 'price',
+          precision: 2,
+          minMove: 0.01,
+        }
+      });
+
+      const histogramSeries = chart.addSeries(HistogramSeries, {
+        color: "rgba(226, 228, 231, 1)",
+        lastValueVisible: false,
+        priceLineVisible: false,
+        visible: true,
+        priceScaleId: 'volume',
+      });
+
+      areaSeries.priceScale().applyOptions({
+        scaleMargins: { top: 0.1, bottom: 0.2 },
+        visible: true,
+        autoScale: true,
+      });
+
+      // Configure the volume scale
+      chart.priceScale('volume').applyOptions({
+        scaleMargins: { top: 0.8, bottom: 0 },
+        visible: false, 
+        alignLabels: true,
+        autoScale: true,
+      });
+
+      seriesRef.current = areaSeries;
+      histogramSeriesRef.current = histogramSeries;
+
+      if (data && data.length > 0) {
+        areaSeries.setData(data);
+        histogramSeries.setData(data);
+      }
+
+      chartInstanceRef.current.applyOptions({
+        handleScale: {
+          axisPressedMouseMove: true,
+        },
+        handleScroll: {
+          vertTouchDrag: false,
+        },
+        rightPriceScale: {
+          visible: true,
+          autoScale: true,
+          scaleMargins: {
+            top: 0.1,
+            bottom: 0.2,
+          },
+        },
+      });
+
+      // Apply label styling separately
+      areaSeries.applyOptions({
+        priceLineSource: PriceLineSource.LastVisible,
+        lastPriceAnimation: 1,
+      });
+      
+      // Setup resize listener
+      const handleResize = () => {
+        if (chartInstanceRef.current && chartContainerRef.current) {
+          const vw = Math.max(
+            document?.documentElement?.clientWidth || 0,
+            window?.innerWidth || 0
+          );
+          chartInstanceRef.current.applyOptions({
+            width: vw * 0.95,
+            height: 343,
+          });
+        }
+      };
+      
+      window.addEventListener('resize', handleResize);
+      // Store the listener for cleanup
+      resizeListenerRef.current = handleResize;
+    }
+
+    // Cleanup function
+    return () => {
+      // Remove resize event listener
+      if (resizeListenerRef.current) {
+        window.removeEventListener('resize', resizeListenerRef.current);
+      }
+      
+      // Clean up chart instance
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.remove();
+        chartInstanceRef.current = undefined;
+      }
+    };
+  }, []); // Empty dependency array since this should only run once
+
+  // Effect for data updates
   useEffect(() => {
     updateChartData();
   }, [updateChartData]);
 
   return (
     <>
-      <div
-        className={`${
-          isLoading ? "block" : "hidden"
-        } transition-all duration-300`}
-      >
+      <div className={`${isLoading ? "block" : "hidden"} transition-all duration-300`}>
         ..loading...
       </div>
       <div
