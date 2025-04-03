@@ -54,8 +54,12 @@ export default function MultiSelectWrapper({
   }, []);
   // Fetch assets when component mounts
   const fetchAssets = async () => {
-    const data = await coinCapService.getAssets();
-    setAssets(data);
+    try {
+      const data = await coinCapService.getAssets();
+      setAssets(data);
+    } catch (error) {
+      console.error("Error fetching assets:", error);
+    }
   };
 
   const handleSelect = (selectedList: Asset[]) => {

@@ -28,10 +28,11 @@ export default function Home() {
   const [assetData, setAssetData] = useState<any>(null);
 
   useEffect(() => {
-    coinCapService.getAssetData("bitcoin").then((data) => {
-      console.log({data});
-      setAssetData(data);
-    });
+    if(!assetData) {
+      coinCapService.getAssetData("bitcoin").then((data) => {
+        setAssetData(data);
+      });
+    }
   }, []);
 
   return (
