@@ -1,4 +1,5 @@
 "use client";
+import { Suspense } from "react";
 import ChartControls from "@/components/ChartControls";
 import { coinCapService } from "@/services/coinCap";
 import { useEffect, useState } from "react";
@@ -10,6 +11,8 @@ const tabTitles = [
   { title: "Analysis", isActive: false },
   { title: "Settings", isActive: false },
 ];
+
+
 
 const formatPrice = (price: string | number | null | undefined): string => {
   if (!price) return "";
@@ -28,10 +31,11 @@ export default function Home() {
   const [assetData, setAssetData] = useState<any>(null);
 
   useEffect(() => {
-    coinCapService.getAssetData("bitcoin").then((data) => {
-      console.log({data});
-      setAssetData(data);
-    });
+    if(!assetData) {
+      coinCapService.getAssetData("bitcoin").then((data) => {
+        setAssetData(data);
+      });
+    }
   }, []);
 
   return (
@@ -61,7 +65,9 @@ export default function Home() {
         ))}
       </div>
 
-      <ChartControls  />
+      <Suspense fallback={<div className="text-center">Loading chart controls...</div>}>
+        <ChartControls />
+      </Suspense>
     </div>
   );
 }

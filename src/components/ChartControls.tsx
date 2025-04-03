@@ -5,6 +5,7 @@ import { Asset, coinCapService } from "@/services/coinCap";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRef } from "react";
+import { useSearchParams } from "next/navigation";
 
 const D3LineGraph = dynamic(() => import("@/components/D3LineGraph"), {
   ssr: false,
@@ -27,7 +28,14 @@ const timePeriods = [
 ];
 
 export default function ChartControls() {
-  const [activeTimePeriod, setActiveTimePeriod] = useState(timePeriods[1]);
+  const searchParams = useSearchParams();
+  
+  // Get initial time period from URL or default to 5m
+  const initialTimePeriod = timePeriods.find(
+    (period) => period.value === searchParams.get("period")
+  ) || timePeriods[1];
+  
+  const [activeTimePeriod, setActiveTimePeriod] = useState(initialTimePeriod);
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
   const [btcMarketData, setBtcMarketData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,30 +46,53 @@ export default function ChartControls() {
   const handleAssetSelection = (assets: Asset[]) => {
     setSelectedAssets(assets);
   };
+  
+  // Update URL when time period changes
+  const handleTimePeriodChange = (timePeriod: typeof activeTimePeriod) => {
+    setActiveTimePeriod(timePeriod);
+    
+    // Create new URLSearchParams object to preserve other params
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("period", timePeriod.value);
+    
+    // Update URL without full page refresh
+    window.history.pushState(null, "", `?${params.toString()}`);
+  };
 
   useEffect(() => {
     const fetchBtcMarketData = async () => {
-      setIsLoading(true);
-      const data = await coinCapService.getAssetHistory(
-        "bitcoin",
-        activeTimePeriod.value
-      );
-      const transformedData = data
-        .map((item) => ({
-          time: Math.floor(
-            new Date(new Date(item.date).toISOString().slice(0, 19)).getTime() /
-              1000
-          ) as any,
-          value: parseFloat(item.priceUsd),
-        }))
-        .sort(
-          (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+      if (btcMarketData && activeTimePeriod.value === btcMarketData.timeInterval) {
+        return; 
+      }
+
+      try {
+        setIsLoading(true);
+        const data = await coinCapService.getAssetHistory(
+          "bitcoin",
+          activeTimePeriod.value
         );
-      setBtcMarketData(transformedData);
-      setIsLoading(false);
+        const transformedData = data
+          .map((item) => ({
+            time: Math.floor(
+              new Date(new Date(item.date).toISOString().slice(0, 19)).getTime() /
+                1000
+            ) as any,
+            value: parseFloat(item.priceUsd),
+          }))
+          .sort(
+            (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+          );
+        setBtcMarketData(transformedData);
+        setIsLoading(false);
+      } catch (error) {
+        setIsLoading(false);
+        setBtcMarketData(null);
+        console.error("Error fetching BTC market data:", error);
+      }
     };
+
     fetchBtcMarketData();
-  }, [selectedAssets, activeTimePeriod]);
+  }, [activeTimePeriod]); 
 
   return (
     <div className=" h-full w-full max-w-[91.2vw]">
@@ -105,7 +136,7 @@ export default function ChartControls() {
                   ? "text-white bg-primary rounded-[5px] px-[14px] py-[5px]"
                   : ""
               } `}
-              onClick={() => setActiveTimePeriod(timePeriod)}
+              onClick={() => handleTimePeriodChange(timePeriod)}
             >
               {timePeriod.title}
             </button>
