@@ -5,7 +5,7 @@ import { Asset, coinCapService } from "@/services/coinCap";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 const D3LineGraph = dynamic(() => import("@/components/D3LineGraph"), {
   ssr: false,
@@ -29,7 +29,6 @@ const timePeriods = [
 
 export default function ChartControls() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   
   // Get initial time period from URL or default to 5m
   const initialTimePeriod = timePeriods.find(
